@@ -1,0 +1,13 @@
+.MessageBox {
+    background-color: lightcyan;
+    border: 2px solid black; /* Border color and width */
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    width: 60%;
+    gap: -45px;
+}
+
+.Messages {
+    margin-left: 5%;
+}

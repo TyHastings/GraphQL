@@ -1,0 +1,8 @@
+.UserList {
+    display: flex;
+    flex-direction: column;
+    color: blue;
+    width: 25%;
+    text-align: center;
+}
+

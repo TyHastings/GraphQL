@@ -1,25 +1,51 @@
-const express = require('express')
-const expressGraphQL = require('express-graphql').graphqlHTTP
-const cors = require('cors')
-const schema = require('./schema/schema')
-var admin = require("firebase-admin");
+const express = require('express');
+const expressGraphQL = require('express-graphql').graphqlHTTP;
+const { execute, subscribe } = require('graphql');
+const cors = require('cors');
+const schema = require('./schema/schema');
+const { createServer } = require('http');
+const { WebSocketServer } = require('ws');
+const { useServer } = require('graphql-ws/lib/use/ws')
 
-var serviceAccount = require("../config/graphql-8e395-firebase-adminsdk-oxdmz-54fedf0083.json");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+const app = express();
+app.use(cors());
 
-const database = admin.firestore();
-
-const app = express()
-app.use(cors())
-
-const port = 3000
+const port = 3000;
 
 app.use('/graphql', expressGraphQL({
     schema: schema,
-    graphiql: true,
-}))
+    graphiql: {
+        subscriptionEndpoint: `ws://localhost:${port}/graphql`,
+    },
+}));
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+const server = createServer(app);
+
+const wsServer = new WebSocketServer({
+    server, 
+    path: '/graphql',
+  });
+  
+  useServer(
+    {
+      schema,
+      execute,
+      subscribe,
+      onConnect: async (ctx) => {
+        console.log('Client connected:', ctx);
+      },
+      onDisconnect: async (ctx) => {
+        console.log('Client disconnected:', ctx);
+      },
+      onError: (ctx, msg, errors) => {
+        console.error('Subscription error:', errors);
+      },
+    },
+    wsServer
+  );
+ 
+  server.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+    console.log(`GraphQL subscriptions available at ws://localhost:${port}/graphql`);
+  });
